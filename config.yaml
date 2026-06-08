@@ -1,0 +1,16 @@
+camera:
+  source: 0
+  width: 640
+  height: 480
+  fps: 30
+
+pipeline:
+  detect_interval: 3
+  use_tracker: true
+
+thresholds:
+  ear_closed: 0.20
+  mar_yawn: 0.60
+  eye_closed_sec: 1.5
+  perclos_window_sec: 10
+  perclos_threshold: 0.30
