@@ -1,33 +1,98 @@
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.append(str(ROOT))
+import time
 
 import cv2
+from src.analyzer.rule_based import DrowsinessAnalyzer
+from src.features.eye import eye_aspect_ratio, get_eye_points
+from src.features.mouth import get_mouth_points, mouth_aspect_ratio
+from src.features.temporal import TemporalAnalyzer
+from src.landmark.mediapipe_landmark import MediaPipeFaceLandmark
+from src.utils.drawing import draw_points, draw_status, draw_text_info
 from src.utils.fps import FPSCounter
+
 
 def main():
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        raise RuntimeError("Cannot open webcam")
+
+    landmark_detector = MediaPipeFaceLandmark()
+    analyzer = DrowsinessAnalyzer()
+    temporal_analyzer = TemporalAnalyzer(window_sec=10)
     fps_counter = FPSCounter()
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        fps = fps_counter.update()
+            timestamp = time.time()
+            fps = fps_counter.update()
+            detection = landmark_detector.detect(frame)
 
-        cv2.putText(frame, f"FPS: {fps:.1f}", (20, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            ear_left = None
+            ear_right = None
+            ear_avg = None
+            mar = None
+            perclos = temporal_analyzer.get_perclos()
 
-        cv2.imshow("DMS Demo", frame)
+            if detection is None:
+                status = analyzer.analyze(
+                    ear=1.0,
+                    mar=0.0,
+                    perclos=perclos,
+                    timestamp=timestamp,
+                    face_detected=False,
+                )
+            else:
+                landmarks = detection["landmarks"]
+                image_size = detection["image_size"]
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+                left_eye_points, right_eye_points = get_eye_points(
+                    landmarks,
+                    image_size,
+                )
+                mouth_points = get_mouth_points(landmarks, image_size)
 
-    cap.release()
-    cv2.destroyAllWindows()
+                ear_left = eye_aspect_ratio(left_eye_points)
+                ear_right = eye_aspect_ratio(right_eye_points)
+                ear_avg = (ear_left + ear_right) / 2.0
+                mar = mouth_aspect_ratio(mouth_points)
+                eye_closed = ear_avg < analyzer.ear_threshold
+                perclos = temporal_analyzer.update(eye_closed, timestamp)
+                status = analyzer.analyze(
+                    ear=ear_avg,
+                    mar=mar,
+                    perclos=perclos,
+                    timestamp=timestamp,
+                    face_detected=True,
+                )
+
+                draw_points(frame, left_eye_points, (0, 255, 0))
+                draw_points(frame, right_eye_points, (0, 255, 0))
+                draw_points(frame, mouth_points, (255, 0, 255))
+
+            draw_text_info(
+                frame,
+                {
+                    "FPS": fps,
+                    "EAR Left": ear_left,
+                    "EAR Right": ear_right,
+                    "EAR Avg": ear_avg,
+                    "MAR": mar,
+                    "PERCLOS": perclos,
+                },
+            )
+            draw_status(frame, status)
+
+            cv2.imshow("DMS Demo", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+    finally:
+        landmark_detector.close()
+        cap.release()
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()

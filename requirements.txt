@@ -1,4 +1,4 @@
 opencv-python
-mediapipe
-numpy
+mediapipe==0.10.21
+numpy<2
 pyyaml
