@@ -10,15 +10,31 @@ from src.utils.drawing import draw_points, draw_status, draw_text_info
 from src.utils.fps import FPSCounter
 
 
+DRAW_FULL_MESH = True
+
+
 def main():
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
     if not cap.isOpened():
+        cap.release()
         raise RuntimeError("Cannot open webcam")
 
-    landmark_detector = MediaPipeFaceLandmark()
+    landmark_detector = MediaPipeFaceLandmark(
+        static_image_mode=False,
+        max_num_faces=1,
+        refine_landmarks=False,
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
     analyzer = DrowsinessAnalyzer()
     temporal_analyzer = TemporalAnalyzer(window_sec=10)
     fps_counter = FPSCounter()
+
+    print("DMS webcam demo started")
+    print("Press q or ESC to exit")
 
     try:
         while True:
@@ -45,6 +61,9 @@ def main():
                     face_detected=False,
                 )
             else:
+                if DRAW_FULL_MESH:
+                    landmark_detector.draw_face_mesh(frame, detection)
+
                 landmarks = detection["landmarks"]
                 image_size = detection["image_size"]
 
@@ -87,12 +106,14 @@ def main():
 
             cv2.imshow("DMS Demo", frame)
 
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("q") or key == 27:
                 break
     finally:
         landmark_detector.close()
         cap.release()
         cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
