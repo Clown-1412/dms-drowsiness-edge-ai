@@ -6,11 +6,17 @@ from src.features.eye import eye_aspect_ratio, get_eye_points
 from src.features.mouth import get_mouth_points, mouth_aspect_ratio
 from src.features.temporal import TemporalAnalyzer
 from src.landmark.mediapipe_landmark import MediaPipeFaceLandmark
-from src.utils.drawing import draw_points, draw_status, draw_text_info
+from src.utils.drawing import (
+    draw_indexed_points,
+    draw_points,
+    draw_status,
+    draw_text_info,
+)
 from src.utils.fps import FPSCounter
 
 
 DRAW_FULL_MESH = True
+DRAW_INDEX = False # Debug
 
 
 def main():
@@ -25,16 +31,25 @@ def main():
     landmark_detector = MediaPipeFaceLandmark(
         static_image_mode=False,
         max_num_faces=1,
-        refine_landmarks=False,
+        refine_landmarks=True,
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     )
-    analyzer = DrowsinessAnalyzer()
+    analyzer = DrowsinessAnalyzer(
+        ear_threshold=0.23,
+        mar_threshold=0.45,
+        eye_closed_duration=1.0,
+        perclos_threshold=0.30,
+    )
     temporal_analyzer = TemporalAnalyzer(window_sec=10)
     fps_counter = FPSCounter()
 
     print("DMS webcam demo started")
     print("Press q or ESC to exit")
+    print(
+        "Accuracy debug mode: "
+        "refine_landmarks=True, DRAW_FULL_MESH=True"
+    )
 
     try:
         while True:
@@ -87,9 +102,10 @@ def main():
                     face_detected=True,
                 )
 
-                draw_points(frame, left_eye_points, (0, 255, 0))
-                draw_points(frame, right_eye_points, (0, 255, 0))
-                draw_points(frame, mouth_points, (255, 0, 255))
+                point_drawer = draw_indexed_points if DRAW_INDEX else draw_points
+                point_drawer(frame, left_eye_points, (0, 255, 0))
+                point_drawer(frame, right_eye_points, (0, 255, 0))
+                point_drawer(frame, mouth_points, (255, 0, 255))
 
             draw_text_info(
                 frame,

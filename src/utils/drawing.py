@@ -10,6 +10,23 @@ def draw_points(frame, points, color=(0, 255, 0)):
     return frame
 
 
+def draw_indexed_points(frame, points, color=(0, 255, 0)):
+    for index, point in enumerate(points):
+        x, y = point
+        cv2.circle(frame, (x, y), 3, color, -1)
+        cv2.putText(
+            frame,
+            str(index),
+            (x + 4, y - 4),
+            FONT,
+            0.4,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
+    return frame
+
+
 def draw_text_info(frame, info_dict):
     labels = [
         ("FPS", "{:.1f}"),
