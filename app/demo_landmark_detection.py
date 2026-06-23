@@ -57,7 +57,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-tesselation",
         action="store_true",
-        help="Tat luoi tam giac Face Mesh, chi giu contour/iris",
+        help="Tat luoi tam giac Face Mesh, chi giu contour",
     )
     parser.add_argument(
         "--no-mesh",
@@ -75,7 +75,7 @@ def draw_detection(frame, detection, detector, args) -> None:
             detection,
             draw_contours=True,
             draw_tesselation=not args.no_tesselation,
-            draw_iris=True,
+            draw_iris=False,
         )
 
     # Ve cac dac trung sau Face Mesh de line trang khong de len mat/mieng/mui.

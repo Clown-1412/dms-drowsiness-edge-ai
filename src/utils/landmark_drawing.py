@@ -52,7 +52,7 @@ def draw_eye_landmarks(
         eye_landmarks.get("left_eye", []),
         color=(0, 255, 0),
         closed=True,
-        radius=2,
+        radius=3,
         line_thickness=1,
     )
     draw_landmark_group(
@@ -60,7 +60,7 @@ def draw_eye_landmarks(
         eye_landmarks.get("right_eye", []),
         color=(0, 180, 255),
         closed=True,
-        radius=2,
+        radius=3,
         line_thickness=1,
     )
 
@@ -75,8 +75,8 @@ def draw_mouth_landmarks(
         mouth_landmarks,
         color=(255, 0, 255),
         closed=True,
-        radius=3,
-        line_thickness=2,
+        radius=4,
+        line_thickness=1,
     )
 
 
