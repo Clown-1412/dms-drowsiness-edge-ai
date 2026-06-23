@@ -4,60 +4,60 @@ import cv2
 import numpy as np
 
 
-class FramePreprocessor:
+class BoTienXuLyKhungHinh:
     """Lop tien xu ly frame truoc khi dua sang Face/Landmark Detection."""
 
     def __init__(
         self,
-        target_size: Tuple[int, int] = (640, 480),
-        fps_threshold: float = 15.0,
-        denoise_method: str = "gaussian",
-        gaussian_kernel_size: Tuple[int, int] = (5, 5),
+        kich_thuoc_dich: Tuple[int, int] = (640, 480),
+        nguong_fps: float = 15.0,
+        phuong_phap_giam_nhieu: str = "gaussian",
+        kich_thuoc_kernel_gaussian: Tuple[int, int] = (5, 5),
     ):
-        self.target_size = target_size
-        self.fps_threshold = fps_threshold
-        self.denoise_method = denoise_method.lower()
-        self.gaussian_kernel_size = gaussian_kernel_size
-        self._validate_config()
+        self.kich_thuoc_dich = kich_thuoc_dich
+        self.nguong_fps = nguong_fps
+        self.phuong_phap_giam_nhieu = phuong_phap_giam_nhieu.lower()
+        self.kich_thuoc_kernel_gaussian = kich_thuoc_kernel_gaussian
+        self._kiem_tra_cau_hinh()
 
-    def _validate_config(self) -> None:
+    def _kiem_tra_cau_hinh(self) -> None:
         """Kiem tra cau hinh tien xu ly ngay khi khoi tao."""
-        width, height = self.target_size
-        if width <= 0 or height <= 0:
-            raise ValueError("target_size phai co width va height lon hon 0")
+        chieu_rong, chieu_cao = self.kich_thuoc_dich
+        if chieu_rong <= 0 or chieu_cao <= 0:
+            raise ValueError("kich_thuoc_dich phai co width va height lon hon 0")
 
-        kernel_width, kernel_height = self.gaussian_kernel_size
-        if kernel_width <= 0 or kernel_height <= 0:
-            raise ValueError("gaussian_kernel_size phai lon hon 0")
-        if kernel_width % 2 == 0 or kernel_height % 2 == 0:
-            raise ValueError("gaussian_kernel_size phai la so le")
+        chieu_rong_kernel, chieu_cao_kernel = self.kich_thuoc_kernel_gaussian
+        if chieu_rong_kernel <= 0 or chieu_cao_kernel <= 0:
+            raise ValueError("kich_thuoc_kernel_gaussian phai lon hon 0")
+        if chieu_rong_kernel % 2 == 0 or chieu_cao_kernel % 2 == 0:
+            raise ValueError("kich_thuoc_kernel_gaussian phai la so le")
 
-        if self.denoise_method not in {"gaussian", "nlmeans", "none"}:
-            raise ValueError("denoise_method chi ho tro: gaussian, nlmeans, none")
+        if self.phuong_phap_giam_nhieu not in {"gaussian", "nlmeans", "none"}:
+            raise ValueError("phuong_phap_giam_nhieu chi ho tro: gaussian, nlmeans, none")
 
-    def _validate_frame(self, frame: Optional[np.ndarray]) -> None:
+    def _kiem_tra_khung_hinh(self, khung_hinh: Optional[np.ndarray]) -> None:
         """Kiem tra frame co ton tai va co du lieu anh hop le."""
-        if frame is None:
+        if khung_hinh is None:
             raise ValueError("Frame khong hop le: frame is None")
-        if not isinstance(frame, np.ndarray):
+        if not isinstance(khung_hinh, np.ndarray):
             raise TypeError("Frame phai la numpy.ndarray")
-        if frame.size == 0:
+        if khung_hinh.size == 0:
             raise ValueError("Frame khong hop le: frame rong")
-        if len(frame.shape) != 3 or frame.shape[2] != 3:
+        if len(khung_hinh.shape) != 3 or khung_hinh.shape[2] != 3:
             raise ValueError("Frame phai co 3 kenh mau BGR")
 
-    def resize_frame(self, frame: np.ndarray) -> np.ndarray:
+    def thay_doi_kich_thuoc_khung_hinh(self, khung_hinh: np.ndarray) -> np.ndarray:
         """Resize frame ve kich thuoc cau hinh san."""
-        return cv2.resize(frame, self.target_size, interpolation=cv2.INTER_AREA)
+        return cv2.resize(khung_hinh, self.kich_thuoc_dich, interpolation=cv2.INTER_AREA)
 
-    def denoise_frame(self, frame: np.ndarray) -> np.ndarray:
+    def giam_nhieu_khung_hinh(self, khung_hinh: np.ndarray) -> np.ndarray:
         """Giam nhieu co ban cho frame."""
-        if self.denoise_method == "none":
-            return frame
+        if self.phuong_phap_giam_nhieu == "none":
+            return khung_hinh
 
-        if self.denoise_method == "nlmeans":
+        if self.phuong_phap_giam_nhieu == "nlmeans":
             return cv2.fastNlMeansDenoisingColored(
-                frame,
+                khung_hinh,
                 None,
                 h=10,
                 hColor=10,
@@ -65,30 +65,30 @@ class FramePreprocessor:
                 searchWindowSize=21,
             )
 
-        return cv2.GaussianBlur(frame, self.gaussian_kernel_size, 0)
+        return cv2.GaussianBlur(khung_hinh, self.kich_thuoc_kernel_gaussian, 0)
 
-    def convert_bgr_to_rgb(self, frame: np.ndarray) -> np.ndarray:
+    def chuyen_bgr_sang_rgb(self, khung_hinh: np.ndarray) -> np.ndarray:
         """Chuyen frame tu BGR cua OpenCV sang RGB cho cac model CV/AI."""
-        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        return cv2.cvtColor(khung_hinh, cv2.COLOR_BGR2RGB)
 
-    def check_fps(self, fps: float) -> bool:
+    def kiem_tra_fps(self, fps: float) -> bool:
         """
         Kiem tra FPS co dat nguong hay khong.
 
         Khong dung chuong trinh khi FPS thap, chi in canh bao de debug hieu nang.
         """
-        is_stable = fps >= self.fps_threshold
+        fps_on_dinh = fps >= self.nguong_fps
 
         # FPS = 0 thuong xay ra o frame dau tien khi chua du du lieu do.
-        if 0 < fps < self.fps_threshold:
-            print(f"[CANH BAO] FPS thap: {fps:.2f} < {self.fps_threshold:.2f}")
+        if 0 < fps < self.nguong_fps:
+            print(f"[CANH BAO] FPS thap: {fps:.2f} < {self.nguong_fps:.2f}")
 
-        return is_stable
+        return fps_on_dinh
 
-    def process(
+    def xu_ly(
         self,
-        frame: np.ndarray,
-        timestamp: Optional[float] = None,
+        khung_hinh: np.ndarray,
+        moc_thoi_gian: Optional[float] = None,
         fps: float = 0.0,
     ) -> Dict[str, Any]:
         """
@@ -103,19 +103,19 @@ class FramePreprocessor:
             "is_fps_stable": True/False,
         }
         """
-        self._validate_frame(frame)
+        self._kiem_tra_khung_hinh(khung_hinh)
 
-        resized_frame = self.resize_frame(frame)
-        denoised_frame = self.denoise_frame(resized_frame)
-        processed_frame = self.convert_bgr_to_rgb(denoised_frame)
-        is_fps_stable = self.check_fps(fps)
+        khung_hinh_da_resize = self.thay_doi_kich_thuoc_khung_hinh(khung_hinh)
+        khung_hinh_da_giam_nhieu = self.giam_nhieu_khung_hinh(khung_hinh_da_resize)
+        khung_hinh_da_xu_ly = self.chuyen_bgr_sang_rgb(khung_hinh_da_giam_nhieu)
+        fps_on_dinh = self.kiem_tra_fps(fps)
 
-        frame_height, frame_width = processed_frame.shape[:2]
+        chieu_cao_khung_hinh, chieu_rong_khung_hinh = khung_hinh_da_xu_ly.shape[:2]
 
         return {
-            "processed_frame": processed_frame,
-            "timestamp": timestamp,
+            "processed_frame": khung_hinh_da_xu_ly,
+            "timestamp": moc_thoi_gian,
             "fps": fps,
-            "frame_size": (frame_width, frame_height),
-            "is_fps_stable": is_fps_stable,
+            "frame_size": (chieu_rong_khung_hinh, chieu_cao_khung_hinh),
+            "is_fps_stable": fps_on_dinh,
         }

@@ -6,120 +6,136 @@ from typing import Union
 import cv2
 
 # Cho phep chay file truc tiep bang: python app/demo_camera_preprocess.py
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+GOC_DU_AN = Path(__file__).resolve().parents[1]
+if str(GOC_DU_AN) not in sys.path:
+    sys.path.insert(0, str(GOC_DU_AN))
 
-# Muc dich: Demo su dung CameraStream va FramePreprocessor cung nhau, giup kiem tra va hieu chinh tham so de dat duoc FPS mong muon.
-from src.camera.camera_stream import CameraStream
-from src.preprocessing.frame_preprocessor import FramePreprocessor
+# Muc dich: Demo su dung LuongCamera va BoTienXuLyKhungHinh cung nhau.
+from src.camera.camera_stream import LuongCamera
+from src.preprocessing.frame_preprocessor import BoTienXuLyKhungHinh
 
 
-CameraSource = Union[int, str]
+NguonCamera = Union[int, str]
 
-# CameraSource co the la camera_id (int) hoac duong dan video (str). Ham parse_camera_source se thu nghiem chuyen doi source sang int, neu that bai se tra ve source goc (duong dan video).
-def parse_camera_source(source: str) -> CameraSource:
+# NguonCamera co the la camera_id (int) hoac duong dan video (str).
+def phan_tich_nguon_camera(nguon: str) -> NguonCamera:
     """Chuyen source dang so thanh camera_id, con lai giu la duong dan video."""
     try:
-        return int(source)
+        return int(nguon)
     except ValueError:
-        return source
+        return nguon
 
 
-def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+def tao_bo_doc_tham_so() -> argparse.ArgumentParser:
+    bo_doc_tham_so = argparse.ArgumentParser(
         description="Demo Input Camera Layer + Frame Pre-processing Layer"
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--source",
+        dest="nguon",
         default="0",
         help="Camera ID hoac duong dan video. Mac dinh: 0",
     )
-    parser.add_argument("--width", type=int, default=640, help="Chieu rong frame")
-    parser.add_argument("--height", type=int, default=480, help="Chieu cao frame")
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
+        "--width",
+        dest="chieu_rong",
+        type=int,
+        default=640,
+        help="Chieu rong frame",
+    )
+    bo_doc_tham_so.add_argument(
+        "--height",
+        dest="chieu_cao",
+        type=int,
+        default=480,
+        help="Chieu cao frame",
+    )
+    bo_doc_tham_so.add_argument(
         "--target-fps",
+        dest="fps_muc_tieu",
         type=int,
         default=30,
         help="FPS mong muon khi cau hinh camera",
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--fps-threshold",
+        dest="nguong_fps",
         type=float,
         default=15.0,
         help="Nguong canh bao FPS thap",
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--show",
+        dest="che_do_hien_thi",
         choices=("processed", "original"),
         default="processed",
         help="Hien thi frame da tien xu ly hoac frame goc",
     )
-    return parser
+    return bo_doc_tham_so
 
 
-def main() -> None:
-    args = build_arg_parser().parse_args()
-    source = parse_camera_source(args.source)
-    target_size = (args.width, args.height)
+def chay_demo() -> None:
+    tham_so = tao_bo_doc_tham_so().parse_args()
+    nguon = phan_tich_nguon_camera(tham_so.nguon)
+    kich_thuoc_dich = (tham_so.chieu_rong, tham_so.chieu_cao)
 
-    camera = CameraStream(
-        camera_id=source,
-        width=args.width,
-        height=args.height,
-        target_fps=args.target_fps,
+    luong_camera = LuongCamera(
+        ma_camera=nguon,
+        chieu_rong=tham_so.chieu_rong,
+        chieu_cao=tham_so.chieu_cao,
+        fps_muc_tieu=tham_so.fps_muc_tieu,
     )
-    preprocessor = FramePreprocessor(
-        target_size=target_size,
-        fps_threshold=args.fps_threshold,
-        denoise_method="gaussian",
+    bo_tien_xu_ly = BoTienXuLyKhungHinh(
+        kich_thuoc_dich=kich_thuoc_dich,
+        nguong_fps=tham_so.nguong_fps,
+        phuong_phap_giam_nhieu="gaussian",
     )
 
     print("Demo Camera + Pre-processing started")
     print("Nhan q hoac ESC de thoat")
 
     try:
-        camera.start()
+        luong_camera.bat_dau()
 
         while True:
-            camera_output = camera.read()
-            frame = camera_output["frame"]
-            timestamp = camera_output["timestamp"]
-            fps = camera_output["fps"]
+            ket_qua_camera = luong_camera.doc_khung_hinh()
+            khung_hinh = ket_qua_camera["frame"]
+            moc_thoi_gian = ket_qua_camera["timestamp"]
+            fps = ket_qua_camera["fps"]
 
-            preprocess_output = preprocessor.process(
-                frame=frame,
-                timestamp=timestamp,
+            ket_qua_tien_xu_ly = bo_tien_xu_ly.xu_ly(
+                khung_hinh=khung_hinh,
+                moc_thoi_gian=moc_thoi_gian,
                 fps=fps,
             )
 
-            processed_rgb = preprocess_output["processed_frame"]
-            frame_size = preprocess_output["frame_size"]
+            khung_hinh_rgb = ket_qua_tien_xu_ly["processed_frame"]
+            kich_thuoc_khung_hinh = ket_qua_tien_xu_ly["frame_size"]
 
             print(
-                f"timestamp={timestamp:.3f} | "
+                f"timestamp={moc_thoi_gian:.3f} | "
                 f"fps={fps:.2f} | "
-                f"frame_size={frame_size}"
+                f"frame_size={kich_thuoc_khung_hinh}"
             )
 
-            if args.show == "processed":
+            if tham_so.che_do_hien_thi == "processed":
                 # cv2.imshow can anh BGR, nen chuyen RGB sau tien xu ly ve BGR de hien thi.
-                display_frame = cv2.cvtColor(processed_rgb, cv2.COLOR_RGB2BGR)
+                khung_hinh_hien_thi = cv2.cvtColor(khung_hinh_rgb, cv2.COLOR_RGB2BGR)
             else:
-                display_frame = frame
+                khung_hinh_hien_thi = khung_hinh
 
-            cv2.imshow("DMS Camera Preprocess Demo", display_frame)
+            cv2.imshow("DMS Camera Preprocess Demo", khung_hinh_hien_thi)
 
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord("q") or key == 27:
+            phim = cv2.waitKey(1) & 0xFF
+            if phim == ord("q") or phim == 27:
                 break
 
-    except RuntimeError as exc:
-        print(f"[LOI] {exc}")
+    except RuntimeError as loi:
+        print(f"[LOI] {loi}")
     finally:
-        camera.release()
+        luong_camera.giai_phong()
         cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    chay_demo()

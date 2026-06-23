@@ -1,27 +1,27 @@
 from collections import deque
 
 
-class TemporalAnalyzer:
+class BoPhanTichThoiGian:
     """Tracks boolean eye-closed samples inside a time-based sliding window."""
 
-    def __init__(self, window_sec=10):
-        self.window_sec = window_sec
-        self.history = deque()
+    def __init__(self, cua_so_giay=10):
+        self.cua_so_giay = cua_so_giay
+        self.lich_su = deque()
 
-    def update(self, eye_closed, timestamp):
-        self.history.append((timestamp, bool(eye_closed)))
-        self._drop_old_samples(timestamp)
-        return self.get_perclos()
+    def cap_nhat(self, mat_nham, moc_thoi_gian):
+        self.lich_su.append((moc_thoi_gian, bool(mat_nham)))
+        self._bo_mau_cu(moc_thoi_gian)
+        return self.lay_perclos()
 
-    def get_perclos(self):
-        total = len(self.history)
-        if total == 0:
+    def lay_perclos(self):
+        tong_so_mau = len(self.lich_su)
+        if tong_so_mau == 0:
             return 0.0
 
-        closed_count = sum(1 for _, eye_closed in self.history if eye_closed)
-        return closed_count / total
+        so_mau_mat_nham = sum(1 for _, mat_nham in self.lich_su if mat_nham)
+        return so_mau_mat_nham / tong_so_mau
 
-    def _drop_old_samples(self, timestamp):
-        min_timestamp = timestamp - self.window_sec
-        while self.history and self.history[0][0] < min_timestamp:
-            self.history.popleft()
+    def _bo_mau_cu(self, moc_thoi_gian):
+        moc_thoi_gian_toi_thieu = moc_thoi_gian - self.cua_so_giay
+        while self.lich_su and self.lich_su[0][0] < moc_thoi_gian_toi_thieu:
+            self.lich_su.popleft()

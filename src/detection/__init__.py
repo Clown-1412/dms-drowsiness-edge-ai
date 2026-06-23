@@ -1,4 +1,4 @@
-from src.detection.landmark_detector import LandmarkDetector
+from src.detection.landmark_detector import BoPhatHienDiemMat
 
 
-__all__ = ["LandmarkDetector"]
+__all__ = ["BoPhatHienDiemMat"]

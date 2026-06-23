@@ -1,25 +1,28 @@
 import numpy as np
 
 
-MOUTH_INDICES = [61, 81, 13, 311, 291, 402, 14, 178]
+CHI_SO_MIENG = [61, 81, 13, 311, 291, 402, 14, 178]
 
 
-def mouth_aspect_ratio(points):
-    p = np.array(points, dtype=np.float32)
+def ty_le_mieng(cac_diem):
+    diem = np.array(cac_diem, dtype=np.float32)
 
-    h = np.linalg.norm(p[2] - p[6])
-    w = np.linalg.norm(p[0] - p[4])
+    chieu_cao = np.linalg.norm(diem[2] - diem[6])
+    chieu_rong = np.linalg.norm(diem[0] - diem[4])
 
-    if w == 0:
+    if chieu_rong == 0:
         return 0.0
 
-    return h / w
+    return chieu_cao / chieu_rong
 
 
-def get_mouth_points(landmarks, image_size):
-    width, height = image_size
-    return [_to_pixel(landmarks[index], width, height) for index in MOUTH_INDICES]
+def lay_diem_mieng(cac_diem_moc, kich_thuoc_anh):
+    chieu_rong, chieu_cao = kich_thuoc_anh
+    return [
+        _sang_pixel(cac_diem_moc[chi_so], chieu_rong, chieu_cao)
+        for chi_so in CHI_SO_MIENG
+    ]
 
 
-def _to_pixel(landmark, width, height):
-    return int(landmark[0] * width), int(landmark[1] * height)
+def _sang_pixel(diem_moc, chieu_rong, chieu_cao):
+    return int(diem_moc[0] * chieu_rong), int(diem_moc[1] * chieu_cao)

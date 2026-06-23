@@ -5,13 +5,13 @@ import numpy as np
 
 
 # Cac index co ban cua MediaPipe Face Mesh.
-LEFT_EYE_INDEXES = [33, 160, 158, 133, 153, 144]
-RIGHT_EYE_INDEXES = [362, 385, 387, 263, 373, 380]
-MOUTH_INDEXES = [61, 81, 13, 311, 291, 402, 14, 178]
-NOSE_INDEXES = [1, 2, 98, 327, 168]
+CHI_SO_MAT_TRAI = [33, 160, 158, 133, 153, 144]
+CHI_SO_MAT_PHAI = [362, 385, 387, 263, 373, 380]
+CHI_SO_MIENG = [61, 81, 13, 311, 291, 402, 14, 178]
+CHI_SO_MUI = [1, 2, 98, 327, 168]
 
 # Cac diem thuong dung cho uoc luong head pose o cac layer sau.
-HEAD_POSE_INDEXES = {
+CHI_SO_TU_THE_DAU = {
     "nose_tip": 1,
     "chin": 152,
     "left_eye_corner": 33,
@@ -21,203 +21,203 @@ HEAD_POSE_INDEXES = {
 }
 
 
-LandmarkPoint = Dict[str, float]
+DiemMoc = Dict[str, float]
 
 
-class LandmarkDetector:
+class BoPhatHienDiemMat:
     """Landmark Detection Layer dung MediaPipe Face Mesh."""
 
     def __init__(
         self,
-        static_image_mode: bool = False,
-        max_num_faces: int = 1,
-        refine_landmarks: bool = True,
-        min_detection_confidence: float = 0.5,
-        min_tracking_confidence: float = 0.5,
+        che_do_anh_tinh: bool = False,
+        so_mat_toi_da: int = 1,
+        lam_min_diem_moc: bool = True,
+        do_tin_cay_phat_hien_toi_thieu: float = 0.5,
+        do_tin_cay_theo_doi_toi_thieu: float = 0.5,
     ):
         try:
-            self.face_mesh_module = mp.solutions.face_mesh
-            self.drawing_utils = mp.solutions.drawing_utils
-        except AttributeError as exc:
+            self.module_luoi_mat = mp.solutions.face_mesh
+            self.tien_ich_ve = mp.solutions.drawing_utils
+        except AttributeError as loi:
             raise RuntimeError(
                 "Mediapipe khong ho tro mp.solutions.face_mesh. "
                 "Hay cai lai dependency bang: python -m pip install -r requirements.txt"
-            ) from exc
+            ) from loi
 
-        self.mesh_drawing_spec = self.drawing_utils.DrawingSpec(
+        self.cau_hinh_ve_luoi = self.tien_ich_ve.DrawingSpec(
             color=(255, 255, 255),
             thickness=1,
             circle_radius=1,
         )
-        self.contour_drawing_spec = self.drawing_utils.DrawingSpec(
+        self.cau_hinh_ve_duong_bao = self.tien_ich_ve.DrawingSpec(
             color=(255, 255, 255),
             thickness=1,
             circle_radius=1,
         )
-        self.iris_drawing_spec = self.drawing_utils.DrawingSpec(
+        self.cau_hinh_ve_mong_mat = self.tien_ich_ve.DrawingSpec(
             color=(255, 255, 255),
             thickness=1,
             circle_radius=1,
         )
-        self.face_mesh = self.face_mesh_module.FaceMesh(
-            static_image_mode=static_image_mode,
-            max_num_faces=max_num_faces,
-            refine_landmarks=refine_landmarks,
-            min_detection_confidence=min_detection_confidence,
-            min_tracking_confidence=min_tracking_confidence,
+        self.luoi_mat = self.module_luoi_mat.FaceMesh(
+            static_image_mode=che_do_anh_tinh,
+            max_num_faces=so_mat_toi_da,
+            refine_landmarks=lam_min_diem_moc,
+            min_detection_confidence=do_tin_cay_phat_hien_toi_thieu,
+            min_tracking_confidence=do_tin_cay_theo_doi_toi_thieu,
         )
 
-    def detect(
+    def phat_hien(
         self,
-        processed_frame: Optional[np.ndarray],
-        timestamp: Optional[float] = None,
+        khung_hinh_da_xu_ly: Optional[np.ndarray],
+        moc_thoi_gian: Optional[float] = None,
         fps: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Phat hien mat va tach cac nhom landmark can thiet.
 
-        processed_frame phai la anh RGB da di qua FramePreprocessor.
+        processed_frame phai la anh RGB da di qua BoTienXuLyKhungHinh.
         """
-        if not self._is_valid_frame(processed_frame):
-            return self._empty_result(timestamp=timestamp, fps=fps)
+        if not self._khung_hinh_hop_le(khung_hinh_da_xu_ly):
+            return self._ket_qua_rong(moc_thoi_gian=moc_thoi_gian, fps=fps)
 
-        height, width = processed_frame.shape[:2]
+        chieu_cao, chieu_rong = khung_hinh_da_xu_ly.shape[:2]
 
         try:
-            rgb_frame = np.ascontiguousarray(processed_frame)
-            rgb_frame.flags.writeable = False
-            results = self.face_mesh.process(rgb_frame)
-        except Exception as exc:
-            print(f"[CANH BAO] Loi khi phat hien landmark: {exc}")
-            return self._empty_result(timestamp=timestamp, fps=fps)
+            khung_hinh_rgb = np.ascontiguousarray(khung_hinh_da_xu_ly)
+            khung_hinh_rgb.flags.writeable = False
+            ket_qua = self.luoi_mat.process(khung_hinh_rgb)
+        except Exception as loi:
+            print(f"[CANH BAO] Loi khi phat hien landmark: {loi}")
+            return self._ket_qua_rong(moc_thoi_gian=moc_thoi_gian, fps=fps)
 
-        if not results.multi_face_landmarks:
-            return self._empty_result(timestamp=timestamp, fps=fps)
+        if not ket_qua.multi_face_landmarks:
+            return self._ket_qua_rong(moc_thoi_gian=moc_thoi_gian, fps=fps)
 
-        face_landmarks_raw = results.multi_face_landmarks[0]
-        face_landmarks = self._convert_landmarks(face_landmarks_raw, width, height)
+        diem_mat_goc = ket_qua.multi_face_landmarks[0]
+        diem_mat = self._chuyen_doi_diem_moc(diem_mat_goc, chieu_rong, chieu_cao)
 
         return {
             "face_detected": True,
-            "face_landmarks": face_landmarks,
-            "eye_landmarks": self.extract_eye_landmarks(face_landmarks),
-            "mouth_landmarks": self.extract_mouth_landmarks(face_landmarks),
-            "nose_landmarks": self.extract_nose_landmarks(face_landmarks),
-            "head_points": self.extract_head_points(face_landmarks),
-            "timestamp": timestamp,
+            "face_landmarks": diem_mat,
+            "eye_landmarks": self.trich_xuat_diem_mat(diem_mat),
+            "mouth_landmarks": self.trich_xuat_diem_mieng(diem_mat),
+            "nose_landmarks": self.trich_xuat_diem_mui(diem_mat),
+            "head_points": self.trich_xuat_diem_tu_the_dau(diem_mat),
+            "timestamp": moc_thoi_gian,
             "fps": fps,
-            "image_size": (width, height),
-            "face_landmarks_raw": face_landmarks_raw,
+            "image_size": (chieu_rong, chieu_cao),
+            "face_landmarks_raw": diem_mat_goc,
         }
 
-    def extract_eye_landmarks(
+    def trich_xuat_diem_mat(
         self,
-        face_landmarks: List[LandmarkPoint],
-    ) -> Dict[str, List[LandmarkPoint]]:
+        diem_mat: List[DiemMoc],
+    ) -> Dict[str, List[DiemMoc]]:
         """Tach landmark mat trai va mat phai."""
         return {
-            "left_eye": self._select_landmarks(face_landmarks, LEFT_EYE_INDEXES),
-            "right_eye": self._select_landmarks(face_landmarks, RIGHT_EYE_INDEXES),
+            "left_eye": self._chon_diem_moc(diem_mat, CHI_SO_MAT_TRAI),
+            "right_eye": self._chon_diem_moc(diem_mat, CHI_SO_MAT_PHAI),
         }
 
-    def extract_mouth_landmarks(
+    def trich_xuat_diem_mieng(
         self,
-        face_landmarks: List[LandmarkPoint],
-    ) -> List[LandmarkPoint]:
+        diem_mat: List[DiemMoc],
+    ) -> List[DiemMoc]:
         """Tach cac landmark vung mieng."""
-        return self._select_landmarks(face_landmarks, MOUTH_INDEXES)
+        return self._chon_diem_moc(diem_mat, CHI_SO_MIENG)
 
-    def extract_nose_landmarks(
+    def trich_xuat_diem_mui(
         self,
-        face_landmarks: List[LandmarkPoint],
-    ) -> List[LandmarkPoint]:
+        diem_mat: List[DiemMoc],
+    ) -> List[DiemMoc]:
         """Tach cac landmark vung mui."""
-        return self._select_landmarks(face_landmarks, NOSE_INDEXES)
+        return self._chon_diem_moc(diem_mat, CHI_SO_MUI)
 
-    def extract_head_points(
+    def trich_xuat_diem_tu_the_dau(
         self,
-        face_landmarks: List[LandmarkPoint],
-    ) -> Dict[str, LandmarkPoint]:
+        diem_mat: List[DiemMoc],
+    ) -> Dict[str, DiemMoc]:
         """Tach cac diem chinh de phuc vu Head Pose Estimation sau nay."""
         return {
-            name: face_landmarks[index]
-            for name, index in HEAD_POSE_INDEXES.items()
-            if index < len(face_landmarks)
+            ten: diem_mat[chi_so]
+            for ten, chi_so in CHI_SO_TU_THE_DAU.items()
+            if chi_so < len(diem_mat)
         }
 
-    def release(self) -> None:
+    def giai_phong(self) -> None:
         """Giai phong tai nguyen MediaPipe Face Mesh."""
-        self.face_mesh.close()
+        self.luoi_mat.close()
 
-    def close(self) -> None:
+    def dong(self) -> None:
         """Alias de tuong thich voi cac wrapper MediaPipe cu."""
-        self.release()
+        self.giai_phong()
 
-    def draw_face_mesh(
+    def ve_luoi_mat(
         self,
-        frame: np.ndarray,
-        detection: Dict[str, Any],
-        draw_contours: bool = True,
-        draw_tesselation: bool = True,
-        draw_iris: bool = True,
+        khung_hinh: np.ndarray,
+        ket_qua_phat_hien: Dict[str, Any],
+        ve_duong_bao: bool = True,
+        ve_luoi_tam_giac: bool = True,
+        ve_mong_mat: bool = False,
     ) -> np.ndarray:
         """Ve mesh/contour MediaPipe len frame BGR de debug landmark."""
-        if not detection or not detection.get("face_detected"):
-            return frame
+        if not ket_qua_phat_hien or not ket_qua_phat_hien.get("face_detected"):
+            return khung_hinh
 
-        face_landmarks_raw = detection.get("face_landmarks_raw")
-        if face_landmarks_raw is None:
-            return frame
+        diem_mat_goc = ket_qua_phat_hien.get("face_landmarks_raw")
+        if diem_mat_goc is None:
+            return khung_hinh
 
-        if draw_tesselation:
-            self.drawing_utils.draw_landmarks(
-                image=frame,
-                landmark_list=face_landmarks_raw,
-                connections=self.face_mesh_module.FACEMESH_TESSELATION,
+        if ve_luoi_tam_giac:
+            self.tien_ich_ve.draw_landmarks(
+                image=khung_hinh,
+                landmark_list=diem_mat_goc,
+                connections=self.module_luoi_mat.FACEMESH_TESSELATION,
                 landmark_drawing_spec=None,
-                connection_drawing_spec=self.mesh_drawing_spec,
+                connection_drawing_spec=self.cau_hinh_ve_luoi,
             )
 
-        if draw_contours:
-            self.drawing_utils.draw_landmarks(
-                image=frame,
-                landmark_list=face_landmarks_raw,
-                connections=self.face_mesh_module.FACEMESH_CONTOURS,
+        if ve_duong_bao:
+            self.tien_ich_ve.draw_landmarks(
+                image=khung_hinh,
+                landmark_list=diem_mat_goc,
+                connections=self.module_luoi_mat.FACEMESH_CONTOURS,
                 landmark_drawing_spec=None,
-                connection_drawing_spec=self.contour_drawing_spec,
+                connection_drawing_spec=self.cau_hinh_ve_duong_bao,
             )
 
-        has_iris_landmarks = len(face_landmarks_raw.landmark) > 468
+        co_diem_moc_mong_mat = len(diem_mat_goc.landmark) > 468
         if (
-            draw_iris
-            and has_iris_landmarks
-            and hasattr(self.face_mesh_module, "FACEMESH_IRISES")
+            ve_mong_mat
+            and co_diem_moc_mong_mat
+            and hasattr(self.module_luoi_mat, "FACEMESH_IRISES")
         ):
-            self.drawing_utils.draw_landmarks(
-                image=frame,
-                landmark_list=face_landmarks_raw,
-                connections=self.face_mesh_module.FACEMESH_IRISES,
+            self.tien_ich_ve.draw_landmarks(
+                image=khung_hinh,
+                landmark_list=diem_mat_goc,
+                connections=self.module_luoi_mat.FACEMESH_IRISES,
                 landmark_drawing_spec=None,
-                connection_drawing_spec=self.iris_drawing_spec,
+                connection_drawing_spec=self.cau_hinh_ve_mong_mat,
             )
 
-        return frame
+        return khung_hinh
 
-    def _is_valid_frame(self, frame: Optional[np.ndarray]) -> bool:
+    def _khung_hinh_hop_le(self, khung_hinh: Optional[np.ndarray]) -> bool:
         """Dam bao input la anh RGB hop le va khong lam crash pipeline."""
-        if frame is None:
+        if khung_hinh is None:
             return False
-        if not isinstance(frame, np.ndarray):
+        if not isinstance(khung_hinh, np.ndarray):
             return False
-        if frame.size == 0:
+        if khung_hinh.size == 0:
             return False
-        if len(frame.shape) != 3 or frame.shape[2] != 3:
+        if len(khung_hinh.shape) != 3 or khung_hinh.shape[2] != 3:
             return False
         return True
 
-    def _empty_result(
+    def _ket_qua_rong(
         self,
-        timestamp: Optional[float] = None,
+        moc_thoi_gian: Optional[float] = None,
         fps: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Output thong nhat khi khong thay mat hoac frame khong hop le."""
@@ -228,49 +228,49 @@ class LandmarkDetector:
             "mouth_landmarks": None,
             "nose_landmarks": None,
             "head_points": None,
-            "timestamp": timestamp,
+            "timestamp": moc_thoi_gian,
             "fps": fps,
             "image_size": None,
             "face_landmarks_raw": None,
         }
 
-    def _convert_landmarks(
+    def _chuyen_doi_diem_moc(
         self,
-        face_landmarks_raw: Any,
-        width: int,
-        height: int,
-    ) -> List[LandmarkPoint]:
+        diem_mat_goc: Any,
+        chieu_rong: int,
+        chieu_cao: int,
+    ) -> List[DiemMoc]:
         """Chuyen landmark MediaPipe sang dict gom toa do normalized va pixel."""
-        converted_landmarks = []
+        danh_sach_diem_da_chuyen = []
 
-        for index, landmark in enumerate(face_landmarks_raw.landmark):
-            converted_landmarks.append(
+        for chi_so, diem_moc in enumerate(diem_mat_goc.landmark):
+            danh_sach_diem_da_chuyen.append(
                 {
-                    "index": index,
-                    "x": int(landmark.x * width),
-                    "y": int(landmark.y * height),
-                    "z": float(landmark.z),
-                    "x_norm": float(landmark.x),
-                    "y_norm": float(landmark.y),
+                    "index": chi_so,
+                    "x": int(diem_moc.x * chieu_rong),
+                    "y": int(diem_moc.y * chieu_cao),
+                    "z": float(diem_moc.z),
+                    "x_norm": float(diem_moc.x),
+                    "y_norm": float(diem_moc.y),
                 }
             )
 
-        return converted_landmarks
+        return danh_sach_diem_da_chuyen
 
-    def _select_landmarks(
+    def _chon_diem_moc(
         self,
-        face_landmarks: List[LandmarkPoint],
-        indexes: List[int],
-    ) -> List[LandmarkPoint]:
+        diem_mat: List[DiemMoc],
+        danh_sach_chi_so: List[int],
+    ) -> List[DiemMoc]:
         """Lay cac landmark theo danh sach index da khai bao."""
         return [
-            face_landmarks[index]
-            for index in indexes
-            if index < len(face_landmarks)
+            diem_mat[chi_so]
+            for chi_so in danh_sach_chi_so
+            if chi_so < len(diem_mat)
         ]
 
-    def __enter__(self) -> "LandmarkDetector":
+    def __enter__(self) -> "BoPhatHienDiemMat":
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.release()
+    def __exit__(self, loai_loi, gia_tri_loi, vet_loi) -> None:
+        self.giai_phong()

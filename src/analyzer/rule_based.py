@@ -1,37 +1,37 @@
-class DrowsinessAnalyzer:
+class BoPhanTichNguGat:
     def __init__(
         self,
-        ear_threshold=0.20,
-        mar_threshold=0.60,
-        eye_closed_duration=1.5,
-        perclos_threshold=0.30,
+        nguong_ear=0.20,
+        nguong_mar=0.60,
+        thoi_luong_nham_mat=1.5,
+        nguong_perclos=0.30,
     ):
-        self.ear_threshold = ear_threshold
-        self.mar_threshold = mar_threshold
-        self.eye_closed_duration = eye_closed_duration
-        self.perclos_threshold = perclos_threshold
-        self.eye_closed_start_time = None
+        self.nguong_ear = nguong_ear
+        self.nguong_mar = nguong_mar
+        self.thoi_luong_nham_mat = thoi_luong_nham_mat
+        self.nguong_perclos = nguong_perclos
+        self.thoi_diem_bat_dau_nham_mat = None
 
-    def analyze(self, ear, mar, perclos, timestamp, face_detected=True):
-        if not face_detected:
-            self.eye_closed_start_time = None
+    def phan_tich(self, ear, mar, perclos, moc_thoi_gian, phat_hien_mat=True):
+        if not phat_hien_mat:
+            self.thoi_diem_bat_dau_nham_mat = None
             return "NO_FACE"
 
-        eye_closed = ear < self.ear_threshold
-        if eye_closed:
-            if self.eye_closed_start_time is None:
-                self.eye_closed_start_time = timestamp
+        mat_nham = ear < self.nguong_ear
+        if mat_nham:
+            if self.thoi_diem_bat_dau_nham_mat is None:
+                self.thoi_diem_bat_dau_nham_mat = moc_thoi_gian
 
-            if timestamp - self.eye_closed_start_time > self.eye_closed_duration:
+            if moc_thoi_gian - self.thoi_diem_bat_dau_nham_mat > self.thoi_luong_nham_mat:
                 return "DROWSY"
             return "EYE_CLOSED"
 
-        self.eye_closed_start_time = None
+        self.thoi_diem_bat_dau_nham_mat = None
 
-        if mar > self.mar_threshold:
+        if mar > self.nguong_mar:
             return "YAWNING"
 
-        if perclos > self.perclos_threshold:
+        if perclos > self.nguong_perclos:
             return "DROWSY"
 
         return "NORMAL"

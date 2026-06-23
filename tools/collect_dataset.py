@@ -2,29 +2,29 @@ import cv2
 from pathlib import Path
 import time
 
-output_dir = Path("data/raw/normal")
-output_dir.mkdir(parents=True, exist_ok=True)
+thu_muc_dau_ra = Path("data/raw/normal")
+thu_muc_dau_ra.mkdir(parents=True, exist_ok=True)
 
-cap = cv2.VideoCapture(0)
-idx = int(time.time())
+bo_doc = cv2.VideoCapture(0)
+chi_so = int(time.time())
 
 while True:
-    ret, frame = cap.read()
-    if not ret:
+    thanh_cong, khung_hinh = bo_doc.read()
+    if not thanh_cong:
         break
 
-    cv2.imshow("Collect Dataset", frame)
+    cv2.imshow("Collect Dataset", khung_hinh)
 
-    key = cv2.waitKey(1) & 0xFF
+    phim = cv2.waitKey(1) & 0xFF
 
-    if key == ord("s"):
-        path = output_dir / f"frame_{idx}.jpg"
-        cv2.imwrite(str(path), frame)
-        print("Saved:", path)
-        idx += 1
+    if phim == ord("s"):
+        duong_dan = thu_muc_dau_ra / f"frame_{chi_so}.jpg"
+        cv2.imwrite(str(duong_dan), khung_hinh)
+        print("Saved:", duong_dan)
+        chi_so += 1
 
-    if key == ord("q"):
+    if phim == ord("q"):
         break
 
-cap.release()
+bo_doc.release()
 cv2.destroyAllWindows()

@@ -7,157 +7,179 @@ import cv2
 
 
 # Cho phep chay file truc tiep bang: python app/demo_landmark_detection.py
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+GOC_DU_AN = Path(__file__).resolve().parents[1]
+if str(GOC_DU_AN) not in sys.path:
+    sys.path.insert(0, str(GOC_DU_AN))
 
-from src.camera.camera_stream import CameraStream
-from src.detection.landmark_detector import LandmarkDetector
-from src.preprocessing.frame_preprocessor import FramePreprocessor
+from src.camera.camera_stream import LuongCamera
+from src.detection.landmark_detector import BoPhatHienDiemMat
+from src.preprocessing.frame_preprocessor import BoTienXuLyKhungHinh
 from src.utils.landmark_drawing import (
-    draw_eye_landmarks,
-    draw_mouth_landmarks,
+    ve_diem_mat,
+    ve_diem_mieng,
 )
 
 
-CameraSource = Union[int, str]
+NguonCamera = Union[int, str]
 
 
-def parse_camera_source(source: str) -> CameraSource:
+def phan_tich_nguon_camera(nguon: str) -> NguonCamera:
     """Chuyen source dang so thanh camera_id, con lai giu la duong dan video."""
     try:
-        return int(source)
+        return int(nguon)
     except ValueError:
-        return source
+        return nguon
 
 
-def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+def tao_bo_doc_tham_so() -> argparse.ArgumentParser:
+    bo_doc_tham_so = argparse.ArgumentParser(
         description="Demo Input Camera + Pre-processing + Landmark Detection"
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--source",
+        dest="nguon",
         default="0",
         help="Camera ID hoac duong dan video. Mac dinh: 0",
     )
-    parser.add_argument("--width", type=int, default=640, help="Chieu rong frame")
-    parser.add_argument("--height", type=int, default=480, help="Chieu cao frame")
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
+        "--width",
+        dest="chieu_rong",
+        type=int,
+        default=640,
+        help="Chieu rong frame",
+    )
+    bo_doc_tham_so.add_argument(
+        "--height",
+        dest="chieu_cao",
+        type=int,
+        default=480,
+        help="Chieu cao frame",
+    )
+    bo_doc_tham_so.add_argument(
         "--target-fps",
+        dest="fps_muc_tieu",
         type=int,
         default=30,
         help="FPS mong muon khi cau hinh camera",
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--fps-threshold",
+        dest="nguong_fps",
         type=float,
         default=15.0,
         help="Nguong canh bao FPS thap",
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--no-tesselation",
+        dest="tat_luoi_tam_giac",
         action="store_true",
         help="Tat luoi tam giac Face Mesh, chi giu contour",
     )
-    parser.add_argument(
+    bo_doc_tham_so.add_argument(
         "--no-mesh",
+        dest="tat_luoi_mat",
         action="store_true",
         help="Tat contour/iris MediaPipe, chi ve eye/mouth landmarks",
     )
-    return parser
+    return bo_doc_tham_so
 
 
-def draw_detection(frame, detection, detector, args) -> None:
+def ve_ket_qua_phat_hien(khung_hinh, ket_qua_phat_hien, bo_phat_hien, tham_so) -> None:
     """Ve mesh va cac nhom landmark chinh tren frame hien thi."""
-    if not args.no_mesh:
-        detector.draw_face_mesh(
-            frame,
-            detection,
-            draw_contours=True,
-            draw_tesselation=not args.no_tesselation,
-            draw_iris=False,
+    if not tham_so.tat_luoi_mat:
+        bo_phat_hien.ve_luoi_mat(
+            khung_hinh,
+            ket_qua_phat_hien,
+            ve_duong_bao=True,
+            ve_luoi_tam_giac=not tham_so.tat_luoi_tam_giac,
+            ve_mong_mat=False,
         )
 
     # Ve cac dac trung sau Face Mesh de line trang khong de len mat/mieng/mui.
-    draw_eye_landmarks(
-        frame,
-        detection["eye_landmarks"],
+    ve_diem_mat(
+        khung_hinh,
+        ket_qua_phat_hien["eye_landmarks"],
     )
-    draw_mouth_landmarks(
-        frame,
-        detection["mouth_landmarks"],
+    ve_diem_mieng(
+        khung_hinh,
+        ket_qua_phat_hien["mouth_landmarks"],
     )
 
 
-def get_eye_landmark_count(detection) -> int:
-    eye_landmarks = detection["eye_landmarks"]
-    return len(eye_landmarks["left_eye"]) + len(eye_landmarks["right_eye"])
+def dem_diem_mat(ket_qua_phat_hien) -> int:
+    diem_mat = ket_qua_phat_hien["eye_landmarks"]
+    return len(diem_mat["left_eye"]) + len(diem_mat["right_eye"])
 
 
-def main() -> None:
-    args = build_arg_parser().parse_args()
-    source = parse_camera_source(args.source)
-    target_size = (args.width, args.height)
+def chay_demo() -> None:
+    tham_so = tao_bo_doc_tham_so().parse_args()
+    nguon = phan_tich_nguon_camera(tham_so.nguon)
+    kich_thuoc_dich = (tham_so.chieu_rong, tham_so.chieu_cao)
 
-    camera = CameraStream(
-        camera_id=source,
-        width=args.width,
-        height=args.height,
-        target_fps=args.target_fps,
+    luong_camera = LuongCamera(
+        ma_camera=nguon,
+        chieu_rong=tham_so.chieu_rong,
+        chieu_cao=tham_so.chieu_cao,
+        fps_muc_tieu=tham_so.fps_muc_tieu,
     )
-    preprocessor = FramePreprocessor(
-        target_size=target_size,
-        fps_threshold=args.fps_threshold,
-        denoise_method="gaussian",
+    bo_tien_xu_ly = BoTienXuLyKhungHinh(
+        kich_thuoc_dich=kich_thuoc_dich,
+        nguong_fps=tham_so.nguong_fps,
+        phuong_phap_giam_nhieu="gaussian",
     )
-    detector = LandmarkDetector(
-        static_image_mode=False,
-        max_num_faces=1,
-        refine_landmarks=True,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
+    bo_phat_hien = BoPhatHienDiemMat(
+        che_do_anh_tinh=False,
+        so_mat_toi_da=1,
+        lam_min_diem_moc=True,
+        do_tin_cay_phat_hien_toi_thieu=0.5,
+        do_tin_cay_theo_doi_toi_thieu=0.5,
     )
 
     print("Demo Landmark Detection started")
     print("Nhan q hoac ESC de thoat")
 
     try:
-        camera.start()
+        luong_camera.bat_dau()
 
         while True:
-            camera_output = camera.read()
-            preprocess_output = preprocessor.process(
-                frame=camera_output["frame"],
-                timestamp=camera_output["timestamp"],
-                fps=camera_output["fps"],
+            ket_qua_camera = luong_camera.doc_khung_hinh()
+            ket_qua_tien_xu_ly = bo_tien_xu_ly.xu_ly(
+                khung_hinh=ket_qua_camera["frame"],
+                moc_thoi_gian=ket_qua_camera["timestamp"],
+                fps=ket_qua_camera["fps"],
             )
 
-            processed_rgb = preprocess_output["processed_frame"]
-            detection = detector.detect(
-                processed_frame=processed_rgb,
-                timestamp=preprocess_output["timestamp"],
-                fps=preprocess_output["fps"],
+            khung_hinh_rgb = ket_qua_tien_xu_ly["processed_frame"]
+            ket_qua_phat_hien = bo_phat_hien.phat_hien(
+                khung_hinh_da_xu_ly=khung_hinh_rgb,
+                moc_thoi_gian=ket_qua_tien_xu_ly["timestamp"],
+                fps=ket_qua_tien_xu_ly["fps"],
             )
 
             # cv2.imshow can BGR, nen chuyen RGB sau pre-processing ve BGR.
-            display_frame = cv2.cvtColor(processed_rgb, cv2.COLOR_RGB2BGR)
+            khung_hinh_hien_thi = cv2.cvtColor(khung_hinh_rgb, cv2.COLOR_RGB2BGR)
 
-            if detection["face_detected"]:
-                draw_detection(display_frame, detection, detector, args)
-                face_count = len(detection["face_landmarks"])
-                eye_count = get_eye_landmark_count(detection)
-                mouth_count = len(detection["mouth_landmarks"])
+            if ket_qua_phat_hien["face_detected"]:
+                ve_ket_qua_phat_hien(
+                    khung_hinh_hien_thi,
+                    ket_qua_phat_hien,
+                    bo_phat_hien,
+                    tham_so,
+                )
+                so_diem_khuon_mat = len(ket_qua_phat_hien["face_landmarks"])
+                so_diem_mat = dem_diem_mat(ket_qua_phat_hien)
+                so_diem_mieng = len(ket_qua_phat_hien["mouth_landmarks"])
 
                 print(
                     "face_detected=True | "
-                    f"face_landmarks={face_count} | "
-                    f"eye_landmarks={eye_count} | "
-                    f"mouth_landmarks={mouth_count}"
+                    f"face_landmarks={so_diem_khuon_mat} | "
+                    f"eye_landmarks={so_diem_mat} | "
+                    f"mouth_landmarks={so_diem_mieng}"
                 )
             else:
                 print("face_detected=False")
                 cv2.putText(
-                    display_frame,
+                    khung_hinh_hien_thi,
                     "No face detected",
                     (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -167,19 +189,19 @@ def main() -> None:
                     cv2.LINE_AA,
                 )
 
-            cv2.imshow("DMS Landmark Detection Demo", display_frame)
+            cv2.imshow("DMS Landmark Detection Demo", khung_hinh_hien_thi)
 
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord("q") or key == 27:
+            phim = cv2.waitKey(1) & 0xFF
+            if phim == ord("q") or phim == 27:
                 break
 
-    except RuntimeError as exc:
-        print(f"[LOI] {exc}")
+    except RuntimeError as loi:
+        print(f"[LOI] {loi}")
     finally:
-        detector.release()
-        camera.release()
+        bo_phat_hien.giai_phong()
+        luong_camera.giai_phong()
         cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    chay_demo()
