@@ -1,3 +1,23 @@
-# Pipeline
+Camera
+  ↓
+Frame Pre-processing
+  ↓
+Face / Landmark Detection
+  ↓
+Feature Extraction
+  ↓
+Temporal Buffer
+  ↓
+Hybrid Decision Layer
+      ├── Rule-based Engine
+      ├── ML Classifier
+      └── Risk Fusion
+  ↓
+Driver State Output
+  ↓
+Alert System
+  ↓
+Event Logging
+  ↓
+Mobile App / Dashboard
 
-Camera → Face Detection → Landmark → EAR/MAR/Head Pose → Rule-based Analyzer → Warning

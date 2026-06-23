@@ -25,7 +25,21 @@ class MediaPipeFaceLandmark:
 
         self.face_mesh_module = face_mesh
         self.drawing_utils = drawing_utils
-        self.drawing_spec = drawing_utils.DrawingSpec(thickness=1, circle_radius=1)
+        self.mesh_drawing_spec = drawing_utils.DrawingSpec(
+            color=(255, 255, 255),
+            thickness=1,
+            circle_radius=1,
+        )
+        self.contour_drawing_spec = drawing_utils.DrawingSpec(
+            color=(255, 255, 255),
+            thickness=1,
+            circle_radius=1,
+        )
+        self.iris_drawing_spec = drawing_utils.DrawingSpec(
+            color=(255, 255, 255),
+            thickness=1,
+            circle_radius=1,
+        )
         self.face_mesh = face_mesh.FaceMesh(
             static_image_mode=static_image_mode,
             max_num_faces=max_num_faces,
@@ -56,7 +70,7 @@ class MediaPipeFaceLandmark:
         }
 
     def draw_face_mesh(self, frame, detection):
-        """Draw the MediaPipe face contours from an existing detection."""
+        """Draw white MediaPipe face mesh before feature landmarks."""
         if detection is None:
             return frame
 
@@ -67,10 +81,28 @@ class MediaPipeFaceLandmark:
         self.drawing_utils.draw_landmarks(
             image=frame,
             landmark_list=face_landmarks,
-            connections=self.face_mesh_module.FACEMESH_CONTOURS,
-            landmark_drawing_spec=self.drawing_spec,
-            connection_drawing_spec=self.drawing_spec,
+            connections=self.face_mesh_module.FACEMESH_TESSELATION,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=self.mesh_drawing_spec,
         )
+        self.drawing_utils.draw_landmarks(
+            image=frame,
+            landmark_list=face_landmarks,
+            connections=self.face_mesh_module.FACEMESH_CONTOURS,
+            landmark_drawing_spec=None,
+            connection_drawing_spec=self.contour_drawing_spec,
+        )
+        if (
+            len(face_landmarks.landmark) > 468
+            and hasattr(self.face_mesh_module, "FACEMESH_IRISES")
+        ):
+            self.drawing_utils.draw_landmarks(
+                image=frame,
+                landmark_list=face_landmarks,
+                connections=self.face_mesh_module.FACEMESH_IRISES,
+                landmark_drawing_spec=None,
+                connection_drawing_spec=self.iris_drawing_spec,
+            )
         return frame
 
     def close(self):
