@@ -32,7 +32,10 @@ class LuongCamera:
         if self.da_mo():
             return self
 
-        self.bo_doc = cv2.VideoCapture(self.ma_camera)
+        if isinstance(self.ma_camera, int):
+            self.bo_doc = cv2.VideoCapture(self.ma_camera, cv2.CAP_DSHOW)
+        else:
+            self.bo_doc = cv2.VideoCapture(self.ma_camera)
 
         if self.chieu_rong is not None:
             self.bo_doc.set(cv2.CAP_PROP_FRAME_WIDTH, self.chieu_rong)
