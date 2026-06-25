@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional, Tuple
 import cv2
 import numpy as np
 
-
 class BoTienXuLyKhungHinh:
+####################################################################################
     """
     Lop tien xu ly frame truoc khi dua sang Face/Landmark Detection.
 
@@ -16,7 +16,7 @@ class BoTienXuLyKhungHinh:
     5. Kiem tra FPS de canh bao hieu nang khi demo thoi gian thuc.
     6. Tra ve dictionary chuan cho layer phat hien landmark.
     """
-
+#####################################################################################
     def __init__(
         self,
         kich_thuoc_dich: Tuple[int, int] = (640, 480),
@@ -37,7 +37,7 @@ class BoTienXuLyKhungHinh:
         self.phuong_phap_giam_nhieu = phuong_phap_giam_nhieu.lower()
         self.kich_thuoc_kernel_gaussian = kich_thuoc_kernel_gaussian
         self._kiem_tra_cau_hinh()
-
+######################################################################################
     def _kiem_tra_cau_hinh(self) -> None:
         """
         Kiem tra cau hinh tien xu ly ngay khi khoi tao.
@@ -60,7 +60,7 @@ class BoTienXuLyKhungHinh:
         # Chi cho phep cac che do dang duoc implement trong giam_nhieu_khung_hinh().
         if self.phuong_phap_giam_nhieu not in {"gaussian", "nlmeans", "none"}:
             raise ValueError("phuong_phap_giam_nhieu chi ho tro: gaussian, nlmeans, none")
-
+#############################################################################################
     def _kiem_tra_khung_hinh(self, khung_hinh: Optional[np.ndarray]) -> None:
         """
         Kiem tra frame co ton tai va co du lieu anh hop le.
@@ -75,7 +75,7 @@ class BoTienXuLyKhungHinh:
             raise ValueError("Frame khong hop le: frame rong")
         if len(khung_hinh.shape) != 3 or khung_hinh.shape[2] != 3:
             raise ValueError("Frame phai co 3 kenh mau BGR")
-
+#########################################################################################
     def thay_doi_kich_thuoc_khung_hinh(self, khung_hinh: np.ndarray) -> np.ndarray:
         """
         Resize frame ve kich thuoc cau hinh san.
@@ -84,7 +84,7 @@ class BoTienXuLyKhungHinh:
         giup giam chi phi xu ly cho cac buoc phia sau.
         """
         return cv2.resize(khung_hinh, self.kich_thuoc_dich, interpolation=cv2.INTER_AREA)
-
+##########################################################################################
     def giam_nhieu_khung_hinh(self, khung_hinh: np.ndarray) -> np.ndarray:
         """
         Giam nhieu co ban cho frame sau resize.
@@ -107,7 +107,7 @@ class BoTienXuLyKhungHinh:
             )
 
         return cv2.GaussianBlur(khung_hinh, self.kich_thuoc_kernel_gaussian, 0)
-
+##########################################################################################
     def chuyen_bgr_sang_rgb(self, khung_hinh: np.ndarray) -> np.ndarray:
         """
         Chuyen frame tu BGR cua OpenCV sang RGB cho cac model CV/AI.
@@ -116,7 +116,7 @@ class BoTienXuLyKhungHinh:
         anh sai mau va giam chat luong phat hien.
         """
         return cv2.cvtColor(khung_hinh, cv2.COLOR_BGR2RGB)
-
+##########################################################################################
     def kiem_tra_fps(self, fps: float) -> bool:
         """
         Kiem tra FPS co dat nguong hay khong.
@@ -130,7 +130,7 @@ class BoTienXuLyKhungHinh:
             print(f"[CANH BAO] FPS thap: {fps:.2f} < {self.nguong_fps:.2f}")
 
         return fps_on_dinh
-
+###########################################################################################
     def xu_ly(
         self,
         khung_hinh: np.ndarray,

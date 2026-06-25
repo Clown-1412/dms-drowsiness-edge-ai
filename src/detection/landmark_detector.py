@@ -8,7 +8,7 @@ import numpy as np
 CHI_SO_MAT_TRAI = [33, 160, 158, 133, 153, 144]
 CHI_SO_MAT_PHAI = [362, 385, 387, 263, 373, 380]
 CHI_SO_MIENG = [61, 81, 13, 311, 291, 402, 14, 178]
-CHI_SO_MUI = [1, 2, 98, 327, 168]
+CHI_SO_MUI = [1, 4, 98, 327, 168]
 
 # Cac diem thuong dung cho uoc luong head pose o cac layer sau.
 CHI_SO_TU_THE_DAU = {

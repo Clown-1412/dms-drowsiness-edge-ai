@@ -14,7 +14,7 @@ class LuongCamera:
 
     def __init__(
         self,
-        ma_camera: NguonCamera = 0,
+        ma_camera: NguonCamera = 1,
         chieu_rong: Optional[int] = None,
         chieu_cao: Optional[int] = None,
         fps_muc_tieu: Optional[int] = None,
