@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import cv2
 
 
-# Cho phep chay truc tiep bang: python app/main.py <video_path>
+# Cho phep chay truc tiep bang: python app/main.py --camera 0
+# hoac: python app/main.py --video-path path/to/video.mp4
 GOC_DU_AN = Path(__file__).resolve().parents[1]
 if str(GOC_DU_AN) not in sys.path:
     sys.path.insert(0, str(GOC_DU_AN))
@@ -42,19 +43,27 @@ def tao_bo_doc_tham_so() -> argparse.ArgumentParser:
     bo_doc_tham_so.add_argument(
         "video_path",
         nargs="?",
-        help="Duong dan video demo. Neu bo trong thi dung --source hoac webcam 0.",
+        help="Duong dan video demo. Neu bo trong thi dung --camera/--source hoac webcam 0.",
+    )
+    bo_doc_tham_so.add_argument(
+        "--camera",
+        "--camera-id",
+        dest="camera_id",
+        type=int,
+        default=None,
+        help="ID camera OpenCV, vi du: --camera 0.",
     )
     bo_doc_tham_so.add_argument(
         "--video-path",
         "--video_path",
         dest="video_path_tuy_chon",
-        help="Duong dan video demo, uu tien hon positional video_path.",
+        help="Duong dan video demo, vi du: --video-path data/raw/demo.mp4.",
     )
     bo_doc_tham_so.add_argument(
         "--source",
         dest="nguon",
         default=None,
-        help="Camera ID hoac duong dan video. Dung de tuong thich voi demo cu.",
+        help="Camera ID hoac duong dan video. Alias tuong thich voi demo cu.",
     )
     bo_doc_tham_so.add_argument("--width", dest="chieu_rong", type=int, default=640, help="Chieu rong frame")
     bo_doc_tham_so.add_argument("--height", dest="chieu_cao", type=int, default=480, help="Chieu cao frame")
@@ -72,22 +81,49 @@ def tao_bo_doc_tham_so() -> argparse.ArgumentParser:
     return bo_doc_tham_so
 
 
-def lay_gia_tri_nguon(tham_so) -> str:
-    """Lay video_path/source theo thu tu uu tien ro rang."""
-    return tham_so.video_path_tuy_chon or tham_so.video_path or tham_so.nguon or "0"
+def la_url_stream(nguon: str) -> bool:
+    return "://" in nguon
+
+
+def lay_video_path(tham_so) -> Optional[str]:
+    return tham_so.video_path_tuy_chon or tham_so.video_path
+
+
+def chuan_hoa_video_path(video_path: str) -> str:
+    if la_url_stream(video_path):
+        return video_path
+
+    duong_dan = Path(video_path).expanduser()
+    if not duong_dan.exists():
+        raise RuntimeError(f"Khong tim thay video_path: {duong_dan}")
+    return str(duong_dan.resolve())
 
 
 def chuan_hoa_nguon_dau_vao(tham_so) -> NguonCamera:
-    nguon_raw = lay_gia_tri_nguon(tham_so)
-    nguon = phan_tich_nguon_camera(nguon_raw)
+    video_path = lay_video_path(tham_so)
+    co_camera = tham_so.camera_id is not None
+    co_source = tham_so.nguon is not None
 
-    if isinstance(nguon, str) and "://" not in nguon:
-        duong_dan = Path(nguon).expanduser()
-        if not duong_dan.exists():
-            raise RuntimeError(f"Khong tim thay video_path/source: {duong_dan}")
-        return str(duong_dan.resolve())
+    if video_path and co_camera:
+        raise RuntimeError("Chi chon mot input: --camera hoac --video-path/video_path.")
+    if video_path and co_source:
+        raise RuntimeError("Chi chon mot input: --source hoac --video-path/video_path.")
+    if co_camera and co_source:
+        raise RuntimeError("Chi chon mot input: --camera hoac --source.")
 
-    return nguon
+    if video_path:
+        return chuan_hoa_video_path(video_path)
+
+    if co_camera:
+        return tham_so.camera_id
+
+    if co_source:
+        nguon = phan_tich_nguon_camera(tham_so.nguon)
+        if isinstance(nguon, str):
+            return chuan_hoa_video_path(nguon)
+        return nguon
+
+    return 0
 
 
 def tao_pipeline(tham_so, nguon: NguonCamera) -> PipelinePhatHienNguGat:
