@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 
 from src.features.geometry import danh_sach_diem_hop_le, khoang_cach_euclid
 
-
 class BoTrichXuatDacTrungMieng:
     """Tinh cac dac trung vung mieng theo tung frame."""
 
@@ -13,7 +12,6 @@ class BoTrichXuatDacTrungMieng:
     def tinh_mar(self, mouth_landmarks: List[Dict[str, Any]]) -> float:
         """
         Tinh Mouth Aspect Ratio tu 8 diem vung mieng.
-
         MAR = (vertical_1 + vertical_2 + vertical_3) / (2 * horizontal)
         """
         if not danh_sach_diem_hop_le(mouth_landmarks, 8):

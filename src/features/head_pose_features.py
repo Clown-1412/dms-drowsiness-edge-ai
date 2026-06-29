@@ -47,6 +47,7 @@ class BoTrichXuatDacTrungTuTheDau:
             "head_turned": False,
             "is_valid": False,
             "error": None,
+
         }
 
         kich_thuoc_anh = self._lay_kich_thuoc_anh(image_size)
