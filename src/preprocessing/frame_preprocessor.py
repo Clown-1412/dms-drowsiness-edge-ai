@@ -11,7 +11,7 @@ class BoTienXuLyKhungHinh:
     Pipeline hien tai:
     1. Kiem tra frame dau vao co hop le khong.
     2. Resize frame ve kich thuoc chuan de cac layer sau xu ly on dinh.
-    3. Giam nhieu theo cau hinh: gaussian, nlmeans, hoac none.
+    3. Giam nhieu theo cau hinh: gaussian hoac none.
     4. Doi mau BGR -> RGB vi OpenCV doc BGR, con MediaPipe/model AI thuong dung RGB.
     5. Kiem tra FPS de canh bao hieu nang khi demo thoi gian thuc.
     6. Tra ve dictionary chuan cho layer phat hien landmark.
@@ -29,7 +29,7 @@ class BoTienXuLyKhungHinh:
 
         kich_thuoc_dich: (width, height) cua frame sau resize.
         nguong_fps: FPS toi thieu de xem stream dang on dinh.
-        phuong_phap_giam_nhieu: "gaussian", "nlmeans", hoac "none".
+        phuong_phap_giam_nhieu: "gaussian" hoac "none".
         kich_thuoc_kernel_gaussian: kernel blur, bat buoc la so le duong.
         """
         self.kich_thuoc_dich = kich_thuoc_dich
@@ -58,8 +58,8 @@ class BoTienXuLyKhungHinh:
             raise ValueError("kich_thuoc_kernel_gaussian phai la so le")
 
         # Chi cho phep cac che do dang duoc implement trong giam_nhieu_khung_hinh().
-        if self.phuong_phap_giam_nhieu not in {"gaussian", "nlmeans", "none"}:
-            raise ValueError("phuong_phap_giam_nhieu chi ho tro: gaussian, nlmeans, none")
+        if self.phuong_phap_giam_nhieu not in {"gaussian", "none"}:
+            raise ValueError("phuong_phap_giam_nhieu chi ho tro: gaussian, none")
 #############################################################################################
     def _kiem_tra_khung_hinh(self, khung_hinh: Optional[np.ndarray]) -> None:
         """
@@ -90,21 +90,10 @@ class BoTienXuLyKhungHinh:
         Giam nhieu co ban cho frame sau resize.
 
         gaussian: nhanh, phu hop demo realtime.
-        nlmeans: loc nhieu manh hon nhung ton CPU hon.
         none: giu nguyen frame khi can benchmark hoac debug anh goc.
         """
         if self.phuong_phap_giam_nhieu == "none":
             return khung_hinh
-
-        if self.phuong_phap_giam_nhieu == "nlmeans":
-            return cv2.fastNlMeansDenoisingColored(
-                khung_hinh,
-                None,
-                h=10,
-                hColor=10,
-                templateWindowSize=7,
-                searchWindowSize=21,
-            )
 
         return cv2.GaussianBlur(khung_hinh, self.kich_thuoc_kernel_gaussian, 0)
 ##########################################################################################

@@ -149,10 +149,6 @@ class BoPhatHienDiemMat:
         """Giai phong tai nguyen MediaPipe Face Mesh."""
         self.luoi_mat.close()
 
-    def dong(self) -> None:
-        """Alias de tuong thich voi cac wrapper MediaPipe cu."""
-        self.giai_phong()
-
     def ve_luoi_mat(
         self,
         khung_hinh: np.ndarray,
