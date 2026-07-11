@@ -1,22 +1,25 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.camera.camera_stream import LuongCamera
 from src.detection.landmark_detector import BoPhatHienDiemMat
+from src.features.feature_extractor import BoTrichXuatDacTrung
 from src.preprocessing.frame_preprocessor import BoTienXuLyKhungHinh
 
 
 class PipelinePhatHienNguGat:
-    """Dieu phoi 3 layer demo: Camera, Pre-processing, Landmark Detection."""
+    """Dieu phoi pipeline DMS theo cac layer da cau hinh."""
 
     def __init__(
         self,
         luong_camera: LuongCamera,
         bo_tien_xu_ly: BoTienXuLyKhungHinh,
         bo_phat_hien_diem_mat: BoPhatHienDiemMat,
+        bo_trich_xuat_dac_trung: Optional[BoTrichXuatDacTrung] = None,
     ):
         self.luong_camera = luong_camera
         self.bo_tien_xu_ly = bo_tien_xu_ly
         self.bo_phat_hien_diem_mat = bo_phat_hien_diem_mat
+        self.bo_trich_xuat_dac_trung = bo_trich_xuat_dac_trung
 
     def bat_dau(self) -> "PipelinePhatHienNguGat":
         """Mo camera/video truoc khi xu ly cac vong lap."""
@@ -39,10 +42,17 @@ class PipelinePhatHienNguGat:
             fps=ket_qua_tien_xu_ly["fps"],
         )
 
+        ket_qua_dac_trung = {}
+        if self.bo_trich_xuat_dac_trung is not None:
+            ket_qua_dac_trung = self.bo_trich_xuat_dac_trung.trich_xuat(
+                ket_qua_phat_hien
+            )
+
         ket_qua_vong_lap = self._hop_nhat_ket_qua(
             ket_qua_camera,
             ket_qua_tien_xu_ly,
             ket_qua_phat_hien,
+            ket_qua_dac_trung,
         )
         return ket_qua_vong_lap
 

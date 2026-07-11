@@ -1,28 +1,64 @@
-import numpy as np
+import math
+from typing import Any, Dict, List
 
+from src.features.geometry import danh_sach_diem_hop_le, khoang_cach_euclid
 
-CHI_SO_MIENG = [61, 81, 13, 311, 291, 402, 14, 178]
+class BoTrichXuatDacTrungMieng:
+    """Tinh cac dac trung vung mieng theo tung frame."""
 
+    def __init__(self, nguong_mieng_mo: float = 0.30):
+        self.nguong_mieng_mo = nguong_mieng_mo
 
-def ty_le_mieng(cac_diem):
-    diem = np.array(cac_diem, dtype=np.float32)
+    def tinh_mar(self, mouth_landmarks: List[Dict[str, Any]]) -> float:
+        """
+        Tinh Mouth Aspect Ratio tu 8 diem vung mieng.
+        MAR = (vertical_1 + vertical_2 + vertical_3) / (2 * horizontal)
+        """
+        if not danh_sach_diem_hop_le(mouth_landmarks, 8):
+            return 0.0
 
-    chieu_cao = np.linalg.norm(diem[2] - diem[6])
-    chieu_rong = np.linalg.norm(diem[0] - diem[4])
+        p1, p2, p3, p4, p5, p6, p7, p8 = mouth_landmarks[:8]
+        horizontal = khoang_cach_euclid(p1, p5)
+        if horizontal <= 0.0:
+            return 0.0
 
-    if chieu_rong == 0:
-        return 0.0
+        vertical_1 = khoang_cach_euclid(p2, p8)
+        vertical_2 = khoang_cach_euclid(p3, p7)
+        vertical_3 = khoang_cach_euclid(p4, p6)
 
-    return chieu_cao / chieu_rong
+        return (vertical_1 + vertical_2 + vertical_3) / (2.0 * horizontal)
 
+    def trich_xuat(self, mouth_landmarks: Any) -> Dict[str, Any]:
+        """Tra ve MAR va trang thai mieng mo."""
+        ket_qua_mac_dinh = {
+            "MAR": 0.0,
+            "mouth_open": False,
+            "is_valid": False,
+            "error": None,
+        }
 
-def lay_diem_mieng(cac_diem_moc, kich_thuoc_anh):
-    chieu_rong, chieu_cao = kich_thuoc_anh
-    return [
-        _sang_pixel(cac_diem_moc[chi_so], chieu_rong, chieu_cao)
-        for chi_so in CHI_SO_MIENG
-    ]
+        if not danh_sach_diem_hop_le(mouth_landmarks, 8):
+            ket_qua_mac_dinh["error"] = "MISSING_MOUTH_POINTS"
+            return ket_qua_mac_dinh
 
+        horizontal = khoang_cach_euclid(mouth_landmarks[0], mouth_landmarks[4])
+        if horizontal <= 0.0:
+            ket_qua_mac_dinh["error"] = "INVALID_MOUTH_WIDTH"
+            return ket_qua_mac_dinh
 
-def _sang_pixel(diem_moc, chieu_rong, chieu_cao):
-    return int(diem_moc[0] * chieu_rong), int(diem_moc[1] * chieu_cao)
+        mar = self.tinh_mar(mouth_landmarks)
+        if not math.isfinite(mar) or mar < 0.0:
+            ket_qua_mac_dinh.update(
+                {
+                    "MAR": mar,
+                    "error": "INVALID_MAR",
+                }
+            )
+            return ket_qua_mac_dinh
+
+        return {
+            "MAR": mar,
+            "mouth_open": mar > self.nguong_mieng_mo,
+            "is_valid": True,
+            "error": None,
+        }
