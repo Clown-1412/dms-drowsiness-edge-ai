@@ -2,7 +2,6 @@ import argparse
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-
 import cv2
 
 
@@ -147,7 +146,7 @@ def tao_pipeline(tham_so, nguon: NguonCamera) -> PipelinePhatHienNguGat:
         so_mat_toi_da=1,
         lam_min_diem_moc=True,
         do_tin_cay_phat_hien_toi_thieu=0.5,
-        do_tin_cay_theo_doi_toi_thieu=0.5,
+        do_tin_cay_theo_doi_toi_thieu=0.8,
     )
 
     return PipelinePhatHienNguGat(
