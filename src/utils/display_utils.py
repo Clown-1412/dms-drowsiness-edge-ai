@@ -174,7 +174,48 @@ def ve_landmark_debug(
     if not tham_so.tat_diem_mat:
         ve_diem_mat(khung_hinh, ket_qua.get("eye_landmarks") or {})
     if not tham_so.tat_diem_mieng:
-        ve_diem_mieng(khung_hinh, ket_qua.get("mouth_landmarks") or [])
+        diem_mieng = (
+            ket_qua.get("mouth_outline_landmarks")
+            or ket_qua.get("mouth_landmarks")
+            or []
+        )
+        ve_diem_mieng(khung_hinh, diem_mieng)
+
+
+def dao_toggle(tham_so: Any, ten_thuoc_tinh: str) -> bool:
+    gia_tri_moi = not bool(getattr(tham_so, ten_thuoc_tinh, False))
+    setattr(tham_so, ten_thuoc_tinh, gia_tri_moi)
+    return gia_tri_moi
+
+
+def in_trang_thai_an_hien(ten_hien_thi: str, dang_tat: bool) -> None:
+    trang_thai = "tat" if dang_tat else "bat"
+    print(f"{ten_hien_thi}: {trang_thai}")
+
+
+def xu_ly_phim_toggle(phim: int, tham_so: Any) -> bool:
+    if phim in (255, -1):
+        return True
+    if phim in (ord("q"), 27):
+        return False
+
+    phim_ky_tu = chr(phim).lower()
+    if phim_ky_tu == "m":
+        in_trang_thai_an_hien("Face mesh", dao_toggle(tham_so, "tat_luoi_mat"))
+    elif phim_ky_tu == "e":
+        in_trang_thai_an_hien("Eye points", dao_toggle(tham_so, "tat_diem_mat"))
+    elif phim_ky_tu == "o":
+        in_trang_thai_an_hien("Mouth points", dao_toggle(tham_so, "tat_diem_mieng"))
+    elif phim_ky_tu == "b":
+        in_trang_thai_an_hien("Bang chi so", dao_toggle(tham_so, "tat_bang_chi_so"))
+    elif phim_ky_tu == "t":
+        in_trang_thai_an_hien("Tesselation", dao_toggle(tham_so, "tat_luoi_tam_giac"))
+    elif phim_ky_tu == "i":
+        dang_bat = dao_toggle(tham_so, "ve_mong_mat")
+        trang_thai = "bat" if dang_bat else "tat"
+        print(f"Iris: {trang_thai}")
+
+    return True
 
 
 def lay_do_tre_hien_thi_ms(
@@ -201,8 +242,9 @@ def hien_thi_ket_qua(
 ) -> bool:
     khung_hinh = cv2.cvtColor(ket_qua["processed_frame"], cv2.COLOR_RGB2BGR)
     ve_landmark_debug(khung_hinh, ket_qua, bo_phat_hien, tham_so)
-    ve_thong_tin_pipeline(khung_hinh, ket_qua)
+    if not getattr(tham_so, "tat_bang_chi_so", False):
+        ve_thong_tin_pipeline(khung_hinh, ket_qua)
 
     cv2.imshow("DMS Pipeline Demo", khung_hinh)
     phim = cv2.waitKey(do_tre_hien_thi_ms) & 0xFF
-    return phim not in (ord("q"), 27)
+    return xu_ly_phim_toggle(phim, tham_so)

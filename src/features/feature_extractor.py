@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 
-from src.features.eye_features import BoTrichXuatDacTrungMat
-from src.features.head_pose_features import BoTrichXuatDacTrungTuTheDau
-from src.features.mouth_features import BoTrichXuatDacTrungMieng
+from src.features.eye import BoTrichXuatDacTrungMat
+from src.features.head_pose import BoTrichXuatDacTrungTuTheDau
+from src.features.mouth import BoTrichXuatDacTrungMieng
 
 
 class BoTrichXuatDacTrung:

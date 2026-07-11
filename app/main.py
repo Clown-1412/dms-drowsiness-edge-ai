@@ -79,6 +79,7 @@ def tao_bo_doc_tham_so() -> argparse.ArgumentParser:
     bo_doc_tham_so.add_argument("--draw-iris", dest="ve_mong_mat", action="store_true", help="Ve iris neu MediaPipe tra ve")
     bo_doc_tham_so.add_argument("--no-eye", dest="tat_diem_mat", action="store_true", help="Khong ve eye_landmarks")
     bo_doc_tham_so.add_argument("--no-mouth", dest="tat_diem_mieng", action="store_true", help="Khong ve mouth_landmarks")
+    bo_doc_tham_so.add_argument("--no-overlay", dest="tat_bang_chi_so", action="store_true", help="Khong ve bang chi so feature")
     bo_doc_tham_so.add_argument("--terminal-interval", dest="khoang_in_terminal", type=int, default=10, help="In thong tin moi N frame")
     return bo_doc_tham_so
 
@@ -196,6 +197,7 @@ def chay() -> None:
         do_tre_hien_thi_ms = lay_do_tre_hien_thi_ms(pipeline, tham_so, nguon)
         if not tham_so.khong_hien_thi:
             print("Nhan q hoac ESC de thoat")
+            print("Toggle: m=face mesh, e=eye points, o=mouth points, b=bang chi so, t=tesselation, i=iris")
 
         while True:
             try:

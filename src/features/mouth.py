@@ -6,7 +6,7 @@ from src.features.geometry import danh_sach_diem_hop_le, khoang_cach_euclid
 class BoTrichXuatDacTrungMieng:
     """Tinh cac dac trung vung mieng theo tung frame."""
 
-    def __init__(self, nguong_mieng_mo: float = 0.60):
+    def __init__(self, nguong_mieng_mo: float = 0.30):
         self.nguong_mieng_mo = nguong_mieng_mo
 
     def tinh_mar(self, mouth_landmarks: List[Dict[str, Any]]) -> float:
