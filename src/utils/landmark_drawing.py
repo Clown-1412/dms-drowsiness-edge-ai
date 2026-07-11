@@ -18,7 +18,7 @@ def ve_nhom_diem_moc(
     cac_diem: Iterable[DiemMoc],
     mau: Mau,
     dong_kin: bool = True,
-    ban_kinh: int = 3,
+    ban_kinh: int = 2,
     do_day_duong: int = 1,
 ) -> None:
     """Ve landmark bang duong noi va cac diem tron, khong ve chu."""
@@ -52,7 +52,7 @@ def ve_diem_mat(
         diem_mat.get("left_eye", []),
         mau=(0, 255, 0),
         dong_kin=True,
-        ban_kinh=3,
+        ban_kinh=2,
         do_day_duong=1,
     )
     ve_nhom_diem_moc(
@@ -60,7 +60,7 @@ def ve_diem_mat(
         diem_mat.get("right_eye", []),
         mau=(0, 180, 255),
         dong_kin=True,
-        ban_kinh=3,
+        ban_kinh=2,
         do_day_duong=1,
     )
 
@@ -75,7 +75,7 @@ def ve_diem_mieng(
         diem_mieng,
         mau=(255, 0, 255),
         dong_kin=True,
-        ban_kinh=4,
+        ban_kinh=2,
         do_day_duong=1,
     )
 
@@ -90,7 +90,7 @@ def ve_diem_mui(
         diem_mui,
         mau=(0, 255, 255),
         dong_kin=False,
-        ban_kinh=3,
+        ban_kinh=2,
         do_day_duong=1,
     )
 
